@@ -12,18 +12,24 @@ export default function Dashboard() {
   const [trend, setTrend] = useState([]);
   const [geoLevel, setGeoLevel] = useState("district");
   const [geography, setGeography] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+ useEffect(() => {
     getFilters().then(setOptions);
   }, []);
 
   useEffect(() => {
-    getSummary(filters).then(setSummary);
-    getTrend(filters).then(setTrend);
-  }, [filters]);
-
-  useEffect(() => {
-    getGeography({ ...filters, level: geoLevel }).then(setGeography);
+    setLoading(true);
+    Promise.all([
+      getSummary(filters),
+      getTrend(filters),
+      getGeography({ ...filters, level: geoLevel }),
+    ]).then(([summaryData, trendData, geoData]) => {
+      setSummary(summaryData);
+      setTrend(trendData);
+      setGeography(geoData);
+      setLoading(false);
+    });
   }, [filters, geoLevel]);
 
   return (
@@ -31,9 +37,16 @@ export default function Dashboard() {
       <h1 className="text-xl font-bold mb-4">PBL Intelligence Dashboard</h1>
 
       <FilterBar filters={filters} options={options} onChange={setFilters} />
-      <KpiCards summary={summary} trend={trend} />
-      <TrendChart trend={trend} />
-      <Leaderboard geography={geography} level={geoLevel} onLevelChange={setGeoLevel} />
+
+      <div className={`transition-opacity ${loading ? "opacity-40" : "opacity-100"}`}>
+        <KpiCards summary={summary} trend={trend} />
+        <TrendChart trend={trend} />
+        <Leaderboard geography={geography} level={geoLevel} onLevelChange={setGeoLevel} />
+      </div>
+
+      {loading && (
+        <p className="text-sm text-gray-400 mt-2">Updating…</p>
+      )}
     </div>
   );
 }
