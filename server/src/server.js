@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import grantRoutes from "./routes/grantRoutes.js";
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(express.json());
 
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/grants", grantRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", db: mongoose.connection.readyState === 1 ? "connected" : "not connected" });
