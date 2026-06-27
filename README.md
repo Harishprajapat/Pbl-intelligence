@@ -5,38 +5,13 @@
 The application transforms raw Project-Based Learning (PBL) school response data into an interactive analytics dashboard and provides a Grant Reporting Assistant that combines financial, performance, and evidence data into a report-ready summary with optional AI-assisted narrative generation.
 
 ---
+## 🌐 Live Demo
 
-## ✨ Features
+Frontend: **https://pbl-intelligence.vercel.app**
 
-### 📊 Program Intelligence Dashboard
-
-* Interactive dashboard built using React
-* Filter data by Month, District, Block, Grade, and Subject
-* KPI cards for participation, attendance, enrollment, and evidence submission
-* District and Block level performance analysis
-* Month-over-month trend visualization
-* Risk classification using predefined attendance thresholds
-
-### 📑 Grant Reporting Assistant
-
-* View grant profile and reporting information
-* Budget utilization summary
-* Performance milestones
-* Evidence image viewer
-* AI-assisted narrative generation
-* Automatic template fallback if AI is unavailable
-
-### ⚙️ Backend Features
-
-* RESTful APIs built with Express.js
-* MongoDB Atlas integration
-* CSV data import using seed scripts
-* Aggregation pipelines for dashboard analytics
-* Modular service architecture
-* AI service isolated from business logic
+Backend API: **https://pbl-intelligence.onrender.com/api/health**
 
 ---
-
 ## 🛠 Tech Stack
 
 | Layer           | Technology                                  |
@@ -48,12 +23,22 @@ The application transforms raw Project-Based Learning (PBL) school response data
 | Version Control | Git & GitHub                                |
 
 ---
+## ✨ Features
 
-## 🌐 Live Demo
+### 📊 Program Intelligence Dashboard
 
-Frontend: **https://pbl-intelligence.vercel.app**
+* Interactive dashboard with filtering by Month, District, Block, Grade, and Subject
+* KPI cards for participation, attendance, enrollment, and evidence submission
+* District and Block level performance analysis
+* Month-over-month trend visualization
+* Automated risk classification based on attendance thresholds
 
-Backend API: **https://pbl-intelligence.onrender.com/api/health**
+### 📑 Grant Reporting Assistant
+
+* Grant profile, financial summary, and performance overview
+* Budget utilization and milestone tracking
+* Evidence image viewer
+* AI-assisted narrative generation with automatic template fallback
 
 ---
 
@@ -156,137 +141,6 @@ Keeping business logic inside the `services` folder allows controllers to stay c
 
 ---
 
-# 🔄 Application Flow
-
-The application processes data in four simple stages.
-
-### Step 1 — Import Data
-
-The provided CSV files are imported into MongoDB using seed scripts.
-
-```
-CSV Files
-     │
-     ▼
-Seed Scripts
-     │
-     ▼
-MongoDB Collections
-```
-
----
-
-### Step 2 — Process Data
-
-When the frontend requests dashboard data:
-
-* Express APIs fetch records from MongoDB.
-* Aggregation pipelines calculate KPIs.
-* The Risk Engine classifies attendance into risk categories.
-* Processed data is returned as JSON.
-
-```
-React
-   │
-API Request
-   │
-Express
-   │
-MongoDB Aggregation
-   │
-Risk Engine
-   │
-JSON Response
-```
-
----
-
-### Step 3 — Display Dashboard
-
-The frontend receives the processed data and displays:
-
-* KPI Cards
-* Charts
-* Tables
-* Risk Status
-* Trends
-
-No business calculations are performed in React.
-
----
-
-### Step 4 — Generate Grant Narrative
-
-For grant reports:
-
-1. Backend collects finance and performance data.
-2. Required metrics are calculated.
-3. If AI is enabled, Gemini generates a narrative.
-4. If AI is unavailable, a template-based summary is returned automatically.
-
-```
-Grant Data
-      │
-Fact Panel
-      │
-───────────────
-│             │
-Gemini      Template
-│             │
-───────────────
-      │
-Generated Report
-```
-
-This ensures the application continues to work even if the AI service is unavailable.
-
----
-
-# 💡 Design Decisions
-
-Some important design choices made during development:
-
-### 1. Keep calculations in the backend
-
-Instead of calculating attendance and risk inside React, all calculations are performed on the server.
-
-Benefits:
-
-* Single source of truth
-* Cleaner frontend
-* Easier testing
-* Consistent API responses
-
----
-
-### 2. Separate AI from Business Logic
-
-The AI model is **not** responsible for calculations.
-
-The backend first computes all metrics such as:
-
-* Attendance Rate
-* Participation Rate
-* Budget Utilization
-* Risk Status
-
-Only after these values are finalized are they sent to Gemini to generate a human-readable narrative.
-
-This prevents AI from inventing numbers and keeps business calculations deterministic.
-
----
-
-### 3. Modular Backend
-
-The backend is divided into:
-
-* Routes
-* Controllers
-* Services
-* Models
-
-This separation makes the codebase easier to maintain and allows new features to be added with minimal changes.
-
 # 🗄️ Database Design
 
 The application stores data in MongoDB using separate collections for school responses and grant reporting data. Keeping the data organized into dedicated collections makes querying faster and simplifies future feature additions.
@@ -387,27 +241,10 @@ These images are displayed inside the Grant Reporting Assistant.
 
 ---
 
-## Why Multiple Collections?
-
-Instead of storing everything in one large collection, the data is separated based on its purpose.
-
-Benefits include:
-
-* Easier querying
-* Better scalability
-* Cleaner data relationships
-* Simpler maintenance
-* Independent updates without affecting other modules
-
----
 
 # ⚙️ Risk Classification Engine
 
-One of the key requirements of the assignment was identifying schools that require attention.
-
-For this purpose, I implemented a dedicated **Risk Engine**.
-
-The Risk Engine is a standalone service responsible only for determining the risk status based on attendance percentage.
+One of the key requirements of the assignment was identifying schools that require attention. To achieve this, I implemented a dedicated **Risk Engine** that determines the risk status based on attendance percentage.
 
 ### Risk Thresholds
 
@@ -418,8 +255,168 @@ The Risk Engine is a standalone service responsible only for determining the ris
 | **35% – 59.9%**   | 🟠 At Risk  |
 | **Below 35%**     | 🔴 Critical |
 
-The Risk Engine is completely independent of the frontend and AI service, making it easy to test and reuse across different APIs.
+The Risk Engine is independent of the frontend and AI service, making it reusable across multiple APIs and easy to test.
 
+### Validation
+
+The computed attendance rate and risk status were verified against the assignment CSV's derived columns using multiple sample records across different months. In addition, the Grant Reporting Assistant independently recomputes attendance, participation, and evidence metrics from the `SchoolResponse` collection, and these values matched the corresponding `GrantPerformance` data for the tested grants and reporting periods.
+
+### Challenge & Solution
+
+During development, I found that some schools reported attendance separately for multiple subjects while enrollment was counted only once. Directly aggregating attendance and enrollment could therefore produce attendance rates above 100%.
+
+To solve this, the application first calculates the attendance rate for each school individually and then computes an **enrollment-weighted average** when aggregating data at the district, block, and overall levels. This approach ensures accurate and realistic attendance percentages across all dashboard endpoints.
+
+---
+
+# 🔌 API Reference
+
+The backend exposes REST APIs for the **Program Intelligence Dashboard** and **Grant Reporting Assistant**.
+
+## Dashboard APIs
+
+### Get Filter Options
+
+```http
+GET /api/dashboard/filters
+```
+
+Returns available filter values:
+
+* Reporting Months
+* Districts
+* Blocks
+* Grades
+* Subjects
+
+---
+
+### Dashboard Summary
+
+```http
+GET /api/dashboard/summary
+```
+
+**Query Parameters**
+
+| Parameter  | Description     |
+| ---------- | --------------- |
+| `month`    | Reporting month |
+| `district` | District name   |
+| `block`    | Block name      |
+| `grade`    | Grade           |
+| `subject`  | Subject         |
+
+Returns dashboard KPIs including:
+
+* Total Schools
+* Participation Rate
+* Attendance Rate
+* Total Enrollment
+* Evidence Submission Rate
+* Overall Risk Status
+
+---
+
+### Dashboard Trends
+
+```http
+GET /api/dashboard/trend
+```
+
+Returns month-wise trends for:
+
+* Participation
+* Attendance
+* Enrollment
+* Evidence Submission
+
+---
+
+### Geography Analysis
+
+```http
+GET /api/dashboard/geography
+```
+
+Returns district and block level performance including:
+
+* Attendance
+* Participation
+* Risk Status
+
+---
+
+## Grant APIs
+
+### List Grants
+
+```http
+GET /api/grants
+```
+
+Returns all available grants.
+
+---
+
+### Available Reporting Months
+
+```http
+GET /api/grants/:grantId/months
+```
+
+Returns reporting months available for the selected grant.
+
+---
+
+### Grant Report
+
+```http
+GET /api/grants/:grantId/report
+```
+
+Returns:
+
+* Grant Profile
+* Financial Summary
+* Performance Summary
+* Evidence Assets
+* Live Dashboard Metrics
+
+---
+
+### Generate AI Narrative
+
+```http
+POST /api/grants/:grantId/narrative
+```
+
+**Request**
+
+```json
+{
+  "month": "2025-08",
+  "aiEnabled": true
+}
+```
+
+**Response**
+
+```json
+{
+  "narrative": "...",
+  "source": "ai"
+}
+```
+
+If the AI service is unavailable, the API automatically returns:
+
+```json
+{
+  "narrative": "...",
+  "source": "template_fallback"
+}
+```
 ---
 
 # 📈 Dashboard Calculations
@@ -518,169 +515,6 @@ This approach improves:
 * Maintainability
 
 and ensures that important business calculations are never dependent on an external AI service.
-
-# 🔌 API Reference
-
-The backend exposes REST APIs that power both the Program Intelligence Dashboard and the Grant Reporting Assistant.
-
----
-
-## Dashboard APIs
-
-### Get Filter Values
-
-```http
-GET /api/dashboard/filters
-```
-
-Returns available filter options such as:
-
-* Reporting Months
-* Districts
-* Blocks
-* Grades
-* Subjects
-
-This endpoint is used to populate filter dropdowns in the dashboard.
-
----
-
-### Dashboard Summary
-
-```http
-GET /api/dashboard/summary
-```
-
-**Query Parameters**
-
-| Parameter | Description     |
-| --------- | --------------- |
-| month     | Reporting month |
-| district  | District name   |
-| block     | Block name      |
-| grade     | Grade           |
-| subject   | Subject         |
-
-Returns:
-
-* Total Schools
-* Participating Schools
-* Participation Rate
-* Attendance Rate
-* Total Enrollment
-* Evidence Submission Rate
-* Overall Risk Status
-
----
-
-### Dashboard Trends
-
-```http
-GET /api/dashboard/trend
-```
-
-Returns month-over-month trends for:
-
-* Participation
-* Attendance
-* Enrollment
-* Evidence Submission
-
-This data is used to render charts in the dashboard.
-
----
-
-### Geography Analysis
-
-```http
-GET /api/dashboard/geography
-```
-
-Supports:
-
-* District Ranking
-* Block Ranking
-
-Each record includes:
-
-* Attendance
-* Participation
-* Risk Status
-
----
-
-## Grant APIs
-
-### List Grants
-
-```http
-GET /api/grants
-```
-
-Returns all available grants.
-
----
-
-### Available Reporting Months
-
-```http
-GET /api/grants/:grantId/months
-```
-
-Returns all reporting months available for a selected grant.
-
----
-
-### Grant Report
-
-```http
-GET /api/grants/:grantId/report
-```
-
-Returns a complete grant report containing:
-
-* Grant Profile
-* Financial Summary
-* Performance Summary
-* Evidence Assets
-* Live Dashboard Metrics
-
----
-
-### Generate Narrative
-
-```http
-POST /api/grants/:grantId/narrative
-```
-
-Request Body
-
-```json
-{
-  "month": "2025-08",
-  "aiEnabled": true
-}
-```
-
-Response
-
-```json
-{
-  "narrative": "...",
-  "source": "gemini"
-}
-```
-
-If AI is unavailable, the response automatically falls back to:
-
-```json
-{
-  "narrative": "...",
-  "source": "template_fallback"
-}
-```
-
-This keeps the frontend behavior consistent regardless of AI availability.
 
 ---
 
@@ -840,19 +674,6 @@ To achieve this:
 
 ---
 
-# 📚 What I Learned
-
-Building this project helped me gain practical experience in:
-
-* Designing REST APIs
-* Working with MongoDB Aggregation Pipelines
-* Importing CSV datasets
-* Structuring a MERN application
-* Integrating AI into an existing application
-* Separating business logic from presentation logic
-* Building reusable backend services
-
----
 
 # 🔮 Future Improvements
 
@@ -870,9 +691,4 @@ Given more time, I would like to add:
 
 ---
 
-# 🙏 Acknowledgements
-
-This project was developed as part of the **Mantra4Change Full-Stack Product Engineering Intern Assignment**.
-
-The objective was to demonstrate practical full-stack development skills by building a real-world dashboard capable of transforming educational and grant reporting data into meaningful insights.
 
